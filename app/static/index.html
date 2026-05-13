@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Story Voice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #1a1209;
+      --ink-muted: #6b5e47;
+      --parchment: #fdf8f0;
+      --parchment-dark: #f3eada;
+      --accent: #c4622a;
+      --accent-light: #f5e6d8;
+      --border: rgba(100,70,30,0.15);
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--parchment);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: 0 2px 24px rgba(100,60,10,0.07);
+    }
+
+    .wordmark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 2rem;
+    }
+
+    .wordmark-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wordmark-icon svg { width: 20px; height: 20px; fill: #fff; }
+
+    .wordmark-text {
+      font-family: 'Lora', serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+
+    .wordmark-sub {
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: block;
+      line-height: 1;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      resize: vertical;
+      font-family: 'Lora', serif;
+      font-size: 1rem;
+      line-height: 1.75;
+      color: var(--ink);
+      background: var(--parchment);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--ink-muted); font-style: italic; }
+
+    .char-count {
+      text-align: right;
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+      margin-top: 0.35rem;
+    }
+
+    .lang-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 1.25rem;
+    }
+
+    .lang-btn {
+      flex: 1;
+      padding: 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--parchment);
+      color: var(--ink-muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .lang-btn.active {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .narrate-btn {
+      width: 100%;
+      margin-top: 1.5rem;
+      padding: 0.9rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .narrate-btn:hover:not(:disabled) { opacity: 0.88; }
+    .narrate-btn:active:not(:disabled) { transform: scale(0.98); }
+    .narrate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .narrate-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    .player {
+      margin-top: 1.5rem;
+      background: var(--parchment-dark);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      display: none;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .player.visible { display: flex; }
+
+    .play-pause {
+      width: 40px; height: 40px; min-width: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.15s;
+    }
+
+    .play-pause:hover { opacity: 0.85; }
+    .play-pause svg { width: 16px; height: 16px; fill: #fff; }
+
+    .progress-wrap { flex: 1; }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      appearance: none;
+      background: var(--border);
+      border-radius: 2px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .progress-bar::-webkit-slider-thumb {
+      appearance: none;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    .time-label {
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+      margin-top: 4px;
+    }
+
+    .dl-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      cursor: pointer;
+      color: var(--ink-muted);
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .dl-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .dl-btn svg { width: 16px; height: 16px; fill: currentColor; display: block; }
+
+    .error {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      background: #fff0ec;
+      border: 1px solid #f5cfc0;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #b94a20;
+      display: none;
+    }
+
+    .error.visible { display: block; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .footer {
+      margin-top: 1.75rem;
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+      text-align: center;
+    }
+
+    .footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="wordmark">
+    <div class="wordmark-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 3C9.5 3 7.5 4.5 7.5 7.5V13c0 2.5 1.5 4.5 4.5 4.5s4.5-2 4.5-4.5V7.5C16.5 4.5 14.5 3 12 3zm-6 9v1.5A6 6 0 0 0 12 19.5 6 6 0 0 0 18 13.5V12h-1.5v1.5a4.5 4.5 0 0 1-9 0V12H6zm5.25 9v1.5h1.5V21h-1.5z"/>
+      </svg>
+    </div>
+    <div>
+      <span class="wordmark-text">Story Voice</span>
+      <span class="wordmark-sub">Powered by ElevenLabs</span>
+    </div>
+  </div>
+
+  <label for="story">Your story</label>
+  <textarea id="story" maxlength="5000" placeholder="Once upon a time, in a forest where the trees whispered secrets to the wind…"></textarea>
+  <div class="char-count"><span id="char-used">0</span> / 5000</div>
+
+  <div style="margin-top:1.25rem;">
+    <label>Language</label>
+    <div class="lang-row" id="lang-row">
+      <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
+      <button class="lang-btn" data-lang="de">🇩🇪 Deutsch</button>
+      <button class="lang-btn" data-lang="hi">🇮🇳 हिन्दी</button>
+    </div>
+  </div>
+
+  <button class="narrate-btn" id="narrate-btn">
+    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    <span id="btn-label">Narrate story</span>
+  </button>
+
+  <div class="error" id="error"></div>
+
+  <div class="player" id="player">
+    <button class="play-pause" id="play-pause" aria-label="Play/pause">
+      <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div class="progress-wrap">
+      <input type="range" class="progress-bar" id="progress" min="0" max="100" value="0" step="0.1" />
+      <div class="time-label" id="time-label">0:00 / 0:00</div>
+    </div>
+    <button class="dl-btn" id="dl-btn" aria-label="Download MP3">
+      <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-16v10.17l-3.59-3.58L7 12l5 5 5-5-1.41-1.41L13 14.17V4h-1z"/></svg>
+    </button>
+  </div>
+
+  <div class="footer">
+    Built to explore ElevenLabs voice AI &mdash;
+    <a href="https://github.com" target="_blank" rel="noopener">view on GitHub</a>
+  </div>
+</div>
+
+<script>
+  const storyEl = document.getElementById('story');
+  const charUsed = document.getElementById('char-used');
+  const langBtns = document.querySelectorAll('.lang-btn');
+  const narrateBtn = document.getElementById('narrate-btn');
+  const btnLabel = document.getElementById('btn-label');
+  const errorEl = document.getElementById('error');
+  const player = document.getElementById('player');
+  const playPause = document.getElementById('play-pause');
+  const playIcon = document.getElementById('play-icon');
+  const progressBar = document.getElementById('progress');
+  const timeLabel = document.getElementById('time-label');
+  const dlBtn = document.getElementById('dl-btn');
+
+  let selectedLang = 'en';
+  let audio = null;
+  let audioURL = null;
+
+  const PLAY_PATH = 'M8 5v14l11-7z';
+  const PAUSE_PATH = 'M6 19h4V5H6v14zm8-14v14h4V5h-4z';
+
+  storyEl.addEventListener('input', () => {
+    charUsed.textContent = storyEl.value.length;
+  });
+
+  langBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      langBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedLang = btn.dataset.lang;
+    });
+  });
+
+  function fmt(s) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60).toString().padStart(2, '0');
+    return `${m}:${sec}`;
+  }
+
+  narrateBtn.addEventListener('click', async () => {
+    const text = storyEl.value.trim();
+    if (!text) { showError('Please enter a story first.'); return; }
+
+    errorEl.classList.remove('visible');
+    narrateBtn.disabled = true;
+    btnLabel.textContent = 'Generating…';
+    narrateBtn.querySelector('svg') && narrateBtn.insertAdjacentHTML('afterbegin', '<span class="spinner"></span>');
+
+    try {
+      const res = await fetch('/narrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, language: selectedLang }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Server error ${res.status}`);
+      }
+
+      const blob = await res.blob();
+      if (audioURL) URL.revokeObjectURL(audioURL);
+      audioURL = URL.createObjectURL(blob);
+
+      if (audio) { audio.pause(); audio = null; }
+      audio = new Audio(audioURL);
+
+      audio.addEventListener('timeupdate', () => {
+        if (audio.duration) {
+          progressBar.value = (audio.currentTime / audio.duration) * 100;
+          timeLabel.textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`;
+        }
+      });
+
+      audio.addEventListener('ended', () => {
+        playIcon.querySelector('path') 
+          ? playIcon.querySelector('path').setAttribute('d', PLAY_PATH)
+          : null;
+        const path = playPause.querySelector('path');
+        if (path) path.setAttribute('d', PLAY_PATH);
+      });
+
+      player.classList.add('visible');
+      audio.play();
+      playPause.querySelector('path').setAttribute('d', PAUSE_PATH);
+
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      narrateBtn.disabled = false;
+      btnLabel.textContent = 'Narrate story';
+      const spinner = narrateBtn.querySelector('.spinner');
+      if (spinner) spinner.remove();
+    }
+  });
+
+  playPause.addEventListener('click', () => {
+    if (!audio) return;
+    const path = playPause.querySelector('path');
+    if (audio.paused) {
+      audio.play();
+      path.setAttribute('d', PAUSE_PATH);
+    } else {
+      audio.pause();
+      path.setAttribute('d', PLAY_PATH);
+    }
+  });
+
+  progressBar.addEventListener('input', () => {
+    if (audio && audio.duration) {
+      audio.currentTime = (progressBar.value / 100) * audio.duration;
+    }
+  });
+
+  dlBtn.addEventListener('click', () => {
+    if (!audioURL) return;
+    const a = document.createElement('a');
+    a.href = audioURL;
+    a.download = 'story.mp3';
+    a.click();
+  });
+
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.classList.add('visible');
+  }
+</script>
+</body>
+</html>
