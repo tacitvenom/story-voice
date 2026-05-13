@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
@@ -8,6 +8,10 @@ COPY pyproject.toml .
 RUN uv sync --no-dev
 
 COPY app/ app/
+COPY data/ data/
+COPY streamlit_app.py .
+COPY start.sh .
+RUN chmod +x start.sh
 
-EXPOSE 8000
-CMD ["uv", "run", "uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8000 8501
+CMD ["./start.sh"]

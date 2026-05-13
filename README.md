@@ -2,9 +2,9 @@
 
 A multilingual children's story narrator powered by [ElevenLabs](https://elevenlabs.io).
 
-Paste a story, pick a language, and hear it read aloud in a warm, expressive voice — in English, German, or Hindi.
+Pick a language among English, German and Hindi, pick a story from the available stories, and hear it read aloud in a warm, expressive voice.
 
-**Live demo →** *(deploy link here)*
+**Live demo →** *(TODO: deploy link here)*
 
 ---
 
@@ -16,13 +16,13 @@ Parents, teachers, and content creators need engaging multilingual audio for chi
 
 - Text → expressive MP3 narration via ElevenLabs Turbo v2.5
 - Three languages: English 🇬🇧, German 🇩🇪, Hindi 🇮🇳
-- Streaming audio playback in-browser, with download
+- Streaming audio playback in-browser, with the option to download the MP3
 - CLI for batch narration workflows
 
 ## Stack
 
 - **Backend**: FastAPI + ElevenLabs Python SDK
-- **Frontend**: Vanilla HTML/CSS/JS (no build step)
+- **Frontend**: Streamlit
 - **Package management**: `uv`
 - **Testing**: `pytest` with mocked ElevenLabs client
 
@@ -37,22 +37,21 @@ cp .env.example .env
 # edit .env and add your ELEVENLABS_API_KEY
 
 # 3. Run the server
-uv run story-voice serve
-# → open http://localhost:8000
+./start.sh
+# → open http://localhost:8501
 ```
 
-### CLI usage
-
-```bash
-# Narrate to a file
-uv run story-voice narrate "Once upon a time..." --language de --output story.mp3
-```
 
 ## Run tests
 
 ```bash
-uv run pytest --cov=app tests/
+uv run py.test --cov=app tests/
 ```
+
+## Stories Sources
+- [English](https://www.writerswrite.com/journal/childrens-stories/)
+- [German]()
+- [Hindi]()
 
 ## What I'd build next
 

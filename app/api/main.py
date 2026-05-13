@@ -1,13 +1,13 @@
 import os
 from typing import Annotated
-from pathlib import Path
+
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, field_validator
 
 from app.core.narrator import StoryNarrator, SUPPORTED_LANGUAGES
+from app.core.story_loader import list_stories, load_story
 
 load_dotenv()
 
@@ -30,16 +30,14 @@ def get_narrator() -> StoryNarrator:
 # --- Schemas ---
 
 class NarrateRequest(BaseModel):
-    text: str
+    story_name: str
     language: str = "en"
 
-    @field_validator("text")
+    @field_validator("story_name")
     @classmethod
-    def text_not_empty(cls, v: str) -> str:
+    def story_name_not_empty(cls, v: str) -> str:
         if not v.strip():
-            raise ValueError("Story text must not be empty.")
-        if len(v) > 5000:
-            raise ValueError("Story text must be 5000 characters or fewer.")
+            raise ValueError("Story name must not be empty.")
         return v.strip()
 
     @field_validator("language")
@@ -58,11 +56,20 @@ def health() -> dict:
 
 
 @app.get("/languages")
-def list_languages() -> dict:
+def language_list() -> dict:
     return {
         code: meta["name"]
         for code, meta in SUPPORTED_LANGUAGES.items()
     }
+
+
+@app.get("/stories/{language_code}")
+def stories_list(language_code: str) -> list[str]:
+    """List available stories for a given language code (e.g. /stories/en)."""
+    try:
+        return list(list_stories(language_code).keys())
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @app.post("/narrate")
@@ -70,19 +77,15 @@ def narrate(
     request: NarrateRequest,
     narrator: Annotated[StoryNarrator, Depends(get_narrator)],
 ) -> StreamingResponse:
-    """Stream MP3 audio of the narrated story."""
+    """Load story by name and language, then stream MP3 audio."""
     try:
-        audio_stream = narrator.narrate(request.text, request.language)
+        text = load_story(request.story_name, request.language)
+        audio_stream = narrator.narrate(text, request.language)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
     return StreamingResponse(
         audio_stream,
         media_type="audio/mpeg",
-        headers={"Content-Disposition": "inline; filename=story.mp3"},
+        headers={"Content-Disposition": f"inline; filename={request.story_name}.mp3"},
     )
-
-
-# Serve frontend (must come after API routes)
-_static_dir = Path(__file__).parent.parent / "static"
-app.mount("/", StaticFiles(directory=str(_static_dir), html=True), name="static")
