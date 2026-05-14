@@ -58,7 +58,7 @@ docker run -p 8000:8000 -p 8501:8501 --env-file .env story-voice:latest
 
 ## Stories Sources
 - [English](https://www.writerswrite.com/journal/childrens-stories/)
-- [German](https://gute-nacht-geschichten.com/kindergeschichten/)
+- German [here](https://gute-nacht-geschichten.com/kindergeschichten/) and [here](https://minutengeschichten.de/)
 - [Hindi](https://librarykvrishikesh.wordpress.com/%e0%a4%aa%e0%a4%82%e0%a4%9a%e0%a4%a4%e0%a4%82%e0%a4%a4%e0%a5%8d%e0%a4%b0-%e0%a4%95%e0%a5%80-%e0%a4%b8%e0%a4%ae%e0%a5%8d%e0%a4%aa%e0%a5%82%e0%a4%b0%e0%a5%8d%e0%a4%a3-%e0%a4%95%e0%a4%b9%e0%a4%be/)
 
 ## What I'd build next

@@ -16,7 +16,7 @@ st.title("🎙️ Story Voice")
 st.caption("Multilingual children's story narrator powered by ElevenLabs")
 
 
-# --- Fetch languages ---
+# --- Fetch languages and stories ---
 
 @st.cache_data(ttl=3600)
 def fetch_languages() -> dict[str, str]:
@@ -36,6 +36,21 @@ def fetch_stories(language_code: str) -> list[str]:
         return r.json()
     except Exception:
         return []
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_audio(story_name: str, language_code: str) -> bytes | None:
+    """Fetch and cache audio for a story+language pair for the app's lifetime."""
+    try:
+        r = httpx.post(
+            f"{API_BASE}/narrate",
+            json={"story_name": story_name, "language": language_code},
+            timeout=60,
+        )
+        r.raise_for_status()
+        return r.content
+    except Exception:
+        return None
 
 
 languages = fetch_languages()
@@ -60,31 +75,29 @@ with col2:
 
 st.divider()
 
-if st.button("▶ Narrate", type="primary", use_container_width=True):
+# Show cached audio immediately if available, without pressing the button
+cache_key = (selected_story, selected_lang)
+cached = st.session_state.get("audio_cache", {}).get(cache_key)
+
+if cached:
+    st.audio(cached, format="audio/mp3")
+    st.download_button(
+        label="⬇ Download MP3",
+        data=cached,
+        file_name=f"{selected_story}.mp3",
+        mime="audio/mpeg",
+    )
+elif st.button("▶ Narrate", type="primary", use_container_width=True):
     with st.spinner(f'Narrating "{selected_story}"…'):
-        try:
-            response = httpx.post(
-                f"{API_BASE}/narrate",
-                json={"story_name": selected_story, "language": selected_lang},
-                timeout=60,
-            )
-            response.raise_for_status()
-            audio_bytes = response.content
-            st.audio(audio_bytes, format="audio/mp3")
-            st.download_button(
-                label="⬇ Download MP3",
-                data=audio_bytes,
-                file_name=f"{selected_story}.mp3",
-                mime="audio/mpeg",
-            )
-        except httpx.HTTPStatusError as e:
-            try:
-                detail = e.response.json().get("detail", str(e))
-            except Exception:
-                detail = f"HTTP {e.response.status_code}"
-            st.error(f"API error: {detail}")
-        except Exception as e:
-            st.error(f"Could not reach the API: {e}")
+        audio_bytes = fetch_audio(selected_story, selected_lang)
+        if audio_bytes:
+            # Store in session state so switching stories and back doesn't re-fetch
+            if "audio_cache" not in st.session_state:
+                st.session_state["audio_cache"] = {}
+            st.session_state["audio_cache"][cache_key] = audio_bytes
+            st.rerun()
+        else:
+            st.error("Could not generate audio. Please try again.")
 
 st.divider()
 st.caption("Built to explore [ElevenLabs voice AI](http://elevenlabs.io/).")
