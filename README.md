@@ -4,7 +4,9 @@ A multilingual children's story narrator powered by [ElevenLabs](https://elevenl
 
 Pick a language among English, German and Hindi, pick a story from the available stories, and hear it read aloud in a warm, expressive voice.
 
-**Live demo →** *(TODO: deploy link here)*
+**Live demo →** [Application link](https://story-voice.streamlit.app/)
+- [Railway](railway.com) for the backend service
+- [Streamlit Community](https://streamlit.io/cloud) for the frontend service
 
 ---
 
