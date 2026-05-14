@@ -75,10 +75,13 @@ if st.button("▶ Narrate", type="primary", use_container_width=True):
                 mime="audio/mpeg",
             )
         except httpx.HTTPStatusError as e:
-            detail = e.response.json().get("detail", str(e))
+            try:
+                detail = e.response.json().get("detail", str(e))
+            except Exception:
+                detail = f"HTTP {e.response.status_code}"
             st.error(f"API error: {detail}")
         except Exception as e:
             st.error(f"Could not reach the API: {e}")
 
 st.divider()
-st.caption("Built to explore ElevenLabs voice AI · [GitHub](https://github.com)")
+st.caption("Built to explore [ElevenLabs voice AI](http://elevenlabs.io/).")

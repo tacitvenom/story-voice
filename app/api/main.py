@@ -1,5 +1,6 @@
 import os
 from typing import Annotated
+from urllib.parse import quote
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
@@ -84,8 +85,10 @@ def narrate(
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+    # RFC 5987: percent-encode filename to support non-ASCII scripts (e.g. Devanagari)
+    safe_filename = quote(f"{request.story_name}.mp3", safe="")
     return StreamingResponse(
         audio_stream,
         media_type="audio/mpeg",
-        headers={"Content-Disposition": f"inline; filename={request.story_name}.mp3"},
+        headers={"Content-Disposition": f"inline; filename*=UTF-8''{safe_filename}"},
     )
