@@ -6,9 +6,11 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator
+from elevenlabs.core import ApiError
 
 from app.core.narrator import StoryNarrator, SUPPORTED_LANGUAGES
 from app.core.story_loader import list_stories, load_story
+
 
 load_dotenv()
 
@@ -81,14 +83,21 @@ def narrate(
     """Load story by name and language, then stream MP3 audio."""
     try:
         text = load_story(request.story_name, request.language)
-        audio_stream = narrator.narrate(text, request.language)
+        audio_bytes = b"".join(narrator.narrate(text, request.language))  # network call happens here
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
-
+    except ApiError as e:
+        if e.status_code == 401 and isinstance(e.body, dict):
+            status = e.body.get("detail", {}).get("status", "")
+            message = e.body.get("detail", {}).get("message", "ElevenLabs error.")
+            if status == "quota_exceeded":
+                raise HTTPException(status_code=402, detail=message)
+        raise HTTPException(status_code=502, detail="ElevenLabs API error.")
+ 
     # RFC 5987: percent-encode filename to support non-ASCII scripts (e.g. Devanagari)
     safe_filename = quote(f"{request.story_name}.mp3", safe="")
     return StreamingResponse(
-        audio_stream,
+        iter([audio_bytes]),
         media_type="audio/mpeg",
         headers={"Content-Disposition": f"inline; filename*=UTF-8''{safe_filename}"},
     )

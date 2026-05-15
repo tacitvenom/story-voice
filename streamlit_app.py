@@ -49,9 +49,13 @@ def fetch_audio(story_name: str, language_code: str) -> bytes | None:
         )
         r.raise_for_status()
         return r.content
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code in (402, 422):
+            detail = e.response.json().get("detail", "")
+            raise RuntimeError(detail)
+        raise RuntimeError("Could not generate audio. Please try again.")
     except Exception:
-        return None
-
+        raise RuntimeError("Could not generate audio. Please try again.")
 
 languages = fetch_languages()
 
@@ -89,7 +93,11 @@ if cached:
     )
 elif st.button("▶ Narrate", type="primary", use_container_width=True):
     with st.spinner(f'Narrating "{selected_story}"…'):
-        audio_bytes = fetch_audio(selected_story, selected_lang)
+        audio_bytes, error = None, None
+        try:
+            audio_bytes = fetch_audio(selected_story, selected_lang)
+        except RuntimeError as e:
+            error = str(e)
         if audio_bytes:
             # Store in session state so switching stories and back doesn't re-fetch
             if "audio_cache" not in st.session_state:
@@ -97,7 +105,7 @@ elif st.button("▶ Narrate", type="primary", use_container_width=True):
             st.session_state["audio_cache"][cache_key] = audio_bytes
             st.rerun()
         else:
-            st.error("Could not generate audio. Please try again.")
+            st.error(error or "Could not generate audio. Please try again.")
 
 st.divider()
 st.caption("Built to explore [ElevenLabs voice AI](http://elevenlabs.io/).")
